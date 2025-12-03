@@ -28,7 +28,7 @@ class Trainer(BaseTrainer):
         model_inputs = {
             'x': batch['x'],
             'eigvs': batch['eigvs'],
-            'Us': batch['U'],  # Model expects 'Us', collate provides 'U'
+            'U': batch['U'],  # Model expects 'Us', collate provides 'U'
             'eigvs_mask': batch['eigvs_mask']
         }
 
