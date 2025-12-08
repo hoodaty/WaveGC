@@ -81,6 +81,7 @@ from src.layer.utils import FFN
 
 #         return self.act(self.proj_final(H))
 
+
 class WaveConv(nn.Module):
 
     def __init__(self, hidden_dim, K, J, tight_frames):
@@ -119,7 +120,7 @@ class WaveConv(nn.Module):
 
     def generate_h(self, b, eigvs):
         T_odd = self.get_transformed_chebyshev(eigvs)[1::2]
-        return torch.einsum("bi, bik-> bk", b, torch.stack(T_odd, -2))
+        return torch.einsum("bi, bik-> bk", b, torch.stack(T_odd, -2)) # (1, K)
 
     def forward(self, x, eigvs, U, a_tilde, b_tilde, scale_tilde):
 
@@ -137,23 +138,24 @@ class WaveConv(nn.Module):
             v_sq += h_g[j] ** 2
 
 
-        h_g = torch.stack(h_g)  # [1+J, N, N]
+        h_g = torch.stack(h_g).squeeze(1)
 
         if self.tight_frames:
             h_g /= torch.sqrt(v_sq) + 1e-6
 
-
-        U_lambda = torch.einsum("ik, jbk -> jbik", U, h_g).squeeze(1)
-        T = torch.einsum("Jij, kj-> Jik", U_lambda, U)
-
+        Z = torch.einsum("nk, nd -> kd", U, x)
         H = []
         for j in range(self.J + 1):
-            H.append( torch.matmul(T[j], self.SM_kernels[j](torch.matmul(T[j], x))) )
+
+            Tj = torch.matmul(U, h_g[j].view(-1,1)*Z)
+            Tj = self.SM_kernels[j](Tj)
+            Tj = torch.einsum("nk, nd -> kd", U, Tj)
+            Tj = torch.matmul(U, h_g[j].view(-1,1)*Tj)
+            H.append( Tj )
             
         H = torch.cat(H, dim=-1)
 
         return self.act(self.proj_final(H))
-
 
 class WaveGC(nn.Module):
 
