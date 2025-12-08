@@ -39,7 +39,7 @@ class WaveGCSpectralTransform:
         assert data.edge_index is not None, "Data object must have edge_index"
         edge_index, edge_weight = get_laplacian(
             data.edge_index,
-            edge_weight=data.edge_attr,
+            edge_weight=None,
             normalization='sym',
             num_nodes=N
         )
