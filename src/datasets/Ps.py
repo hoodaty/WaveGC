@@ -1,115 +1,141 @@
 import torch
-import os
 import os.path as osp
 from torch_geometric.datasets import LRGBDataset
+from torch_geometric.data import Dataset
 import torch_geometric.transforms as T
-from torch_geometric.data import Data
 from ..transforms.spectral import WaveGCSpectralTransform
 
-class PeptidesStructDataset(LRGBDataset):
-    def __init__(self, root):
-        # Define Transform
+class PeptidesStructDataset(Dataset):  # Inherit from Dataset, not InMemoryDataset
+    def __init__(self, root, split='train'):
+        self.name = 'Peptides-struct'
+        self.split = split
+        assert split in ['train', 'val', 'test']
+        
+        # Create a wrapper transform that fixes edge_attr before spectral transform
         pre_transform = T.Compose([
+            FixEdgeAttr(),  # Remove edge_attr to avoid dtype issues
             WaveGCSpectralTransform(mode='long', top_k_pct=1.0)
         ])
         
-        super().__init__(
-            root=root, 
-            name='Peptides-struct', 
-            pre_transform=pre_transform
-        )
-
-    @property
-    def raw_file_names(self):
-        # We now look specifically for the file you downloaded
-        return ['geometric_data_processed.pt']
-
-    def process(self):
-        print(f"Processing {self.name} from {self.raw_file_names[0]}...")
-        raw_path = self.raw_paths[0]
+        super().__init__(root, transform=None, pre_transform=pre_transform)
         
-        # 1. Load the file
-        raw_content = torch.load(raw_path)
+        # Load the appropriate split
+        path = osp.join(self.processed_dir, f'{split}.pt')
+        loaded_data = torch.load(path)
         
-        # 2. Unpack Data
-        # Case A: It's already a list of Data objects
-        if isinstance(raw_content, list):
-            data_list = raw_content
-            print("Loaded raw data as a list.")
+        # Check what we loaded and handle accordingly
+        if isinstance(loaded_data, list):
+            self._data_list = loaded_data
+        elif isinstance(loaded_data, tuple):
+            # It's (data, slices) or (data, slices, sizes) format - need to unpack
+            from torch_geometric.data import Data
+            data = loaded_data[0]
+            slices = loaded_data[1]
+            # Ignore sizes if present (loaded_data[2])
             
-        # Case B: It's a tuple (data, slices) - Standard PyG processed format
-        elif isinstance(raw_content, tuple) and len(raw_content) >= 2:
-            print("Detected compressed (data, slices) format. Unpacking...")
-            data, slices = raw_content
-            data_list = []
-            
-            # Reconstruct individual graphs using slices
-            # We iterate through the number of graphs (slices['x'] has N+1 entries)
+            self._data_list = []
             num_graphs = len(slices['x']) - 1
+            
             for i in range(num_graphs):
                 item = Data()
-                # For each attribute (x, edge_index, y, etc.), slice it
                 for key in data.keys():
                     if key in slices:
                         start, end = slices[key][i], slices[key][i+1]
-                        # Determine dimension to slice
-                        # edge_index is usually sliced on dim 1, others on dim 0
                         if key == 'edge_index':
                             item[key] = data[key][:, start:end]
                         else:
                             item[key] = data[key][start:end]
                     else:
-                        # Global attributes (same for all)
                         item[key] = data[key]
-                data_list.append(item)
-            print(f"Successfully unpacked {len(data_list)} graphs.")
-
+                self._data_list.append(item)
+            print(f"Unpacked {len(self._data_list)} graphs from tuple format")
         else:
-            raise RuntimeError(f"Unknown file format: {type(raw_content)}. Expected List or (Data, Slices) Tuple.")
+            raise RuntimeError(f"Unexpected data format: {type(loaded_data)}")
 
-        # 2.5 Clean up edge attributes and ensure proper format
-        for data in data_list:
-            # Remove edge_attr completely to avoid dimension mismatches
-            if hasattr(data, 'edge_attr'):
-                delattr(data, 'edge_attr')
-            # Ensure edge_index is contiguous and long type
-            if hasattr(data, 'edge_index'):
-                data.edge_index = data.edge_index.long().contiguous()
+    @property
+    def raw_dir(self):
+        return osp.join(self.root, self.name, 'raw')
 
-        # 3. Apply WaveGC Transform (Compute Eigenvectors)
-        if self.pre_transform is not None:
-            # Check if first graph already has 'eigvs' to avoid re-computing if not needed
-            if hasattr(data_list[0], 'eigvs') and data_list[0].eigvs is not None:
-                print("Data already contains spectral features. Skipping transform.")
-            else:
-                print("Applying Spectral Transform (Calculating Eigenvectors)...")
-                # This will take time (~5-10 mins)
-                data_list = [self.pre_transform(data) for data in data_list]
+    @property
+    def processed_dir(self):
+        return osp.join(self.root, self.name, 'processed')
 
-        # 4. Save as List (Safe Format)
-        print("Saving processed data to disk...")
-        torch.save(data_list, self.processed_paths[0])
+    @property
+    def raw_file_names(self):
+        # Use the parent LRGBDataset's raw files
+        return ['peptides-structural-train.csv.gz', 
+                'peptides-structural-val.csv.gz',
+                'peptides-structural-test.csv.gz']
 
-    def load(self, path):
-        """Load the processed data"""
-        data_list = torch.load(path)
-        # Store as _data_list for direct access
-        self._data_list = data_list
-        # Don't call collate - it doesn't work with variable spectral dimensions
-        # Instead, we'll use the list-based access pattern
-    
+    @property
+    def processed_file_names(self):
+        return ['train.pt', 'val.pt', 'test.pt']
+
+    def download(self):
+        # Use LRGBDataset's download mechanism
+        from torch_geometric.datasets import LRGBDataset
+        temp_dataset = LRGBDataset(root=self.root, name=self.name, split='train')
+
+    def process(self):
+        # Use LRGBDataset to load raw data for each split
+        from torch_geometric.datasets import LRGBDataset
+        
+        for split in ['train', 'val', 'test']:
+            print(f"Processing {split} split...")
+            
+            # Load using parent class without pre_transform
+            temp_dataset = LRGBDataset(
+                root=self.root, 
+                name=self.name, 
+                split=split,
+                pre_transform=None
+            )
+            
+            # Extract individual graphs properly
+            data_list = []
+            for i in range(len(temp_dataset)):
+                data = temp_dataset.get(i)  # Use get() instead of indexing
+                data_list.append(data)
+            
+            print(f"Extracted {len(data_list)} individual graphs")
+            
+            # Apply our transforms to each graph
+            if self.pre_transform is not None:
+                print(f"Applying spectral transform...")
+                transformed_list = []
+                for idx, data in enumerate(data_list):
+                    if idx % 1000 == 0:
+                        print(f"  Processing graph {idx}/{len(data_list)}")
+                    transformed_data = self.pre_transform(data)
+                    transformed_list.append(transformed_data)
+                data_list = transformed_list
+            
+            # Save as list (each element is a separate Data object)
+            print(f"Saving {len(data_list)} graphs to {split}.pt")
+            torch.save(data_list, osp.join(self.processed_dir, f'{split}.pt'))
+            print(f"Finished processing {split} split")
+
     def len(self):
-        if not hasattr(self, '_data_list') or self._data_list is None:
-            return 0
         return len(self._data_list)
     
     def get(self, idx):
-        if not hasattr(self, '_data_list') or self._data_list is None:
-            raise RuntimeError("Dataset not loaded. Call load() first.")
         return self._data_list[idx]
     
     def get_data_list(self):
         """Public method to access the full list of graphs"""
-        if not hasattr(self, '_data_list') or self._data_list is None:
-            raise RuntimeError("Dataset not loaded yet.")
         return self._data_list
+
+
+class FixEdgeAttr:
+    """Transform to remove edge_attr before spectral processing"""
+    def __call__(self, data):
+        # Remove edge_attr completely to avoid dimension mismatches
+        if hasattr(data, 'edge_attr'):
+            delattr(data, 'edge_attr')
+        # Ensure edge_index is proper format
+        if hasattr(data, 'edge_index'):
+            data.edge_index = data.edge_index.long().contiguous()
+        return data
+    
+    def __repr__(self):
+        return f'{self.__class__.__name__}()'
