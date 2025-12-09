@@ -8,7 +8,7 @@ class PeptidesFuncDataset(LRGBDataset):
         # Long-Range settings per Appendix C.1 [cite: 268]
         # Full Spectrum (top_k_pct=1.0), No Thresholding (threshold=0.0)
         pre_transform = T.Compose([
-            WaveGCSpectralTransform(mode='long', top_k_pct=1.0, threshold=0.0)
+            WaveGCSpectralTransform(mode='long', top_k_pct=1.0)
         ])
 
         super().__init__(root=root, name='Peptides-func', pre_transform=pre_transform)

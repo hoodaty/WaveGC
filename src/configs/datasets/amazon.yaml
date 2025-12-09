@@ -3,6 +3,5 @@ train:
     root: "./data"
     name: "Photo"
     top_k_pct: 0.3
-    threshold: 0.0
     test_size: 0.2 
     seed: 42

@@ -1,7 +1,4 @@
 _target_: src.model.wavegc.WaveGCNet
-# inp_dim: 750
-# out_dim: 8
-# eigvs_dim: 64
 emb_dim: 32
 pe_dim: 16
 lape_hidden_num: 1

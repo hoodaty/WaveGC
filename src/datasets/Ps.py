@@ -7,7 +7,7 @@ class PeptidesStructDataset(LRGBDataset):
     def __init__(self, root):
         pre_transform = T.Compose([
             # Long-range settings: Full spectrum
-            WaveGCSpectralTransform(mode='long', top_k_pct=1.0, threshold=0.0)
+            WaveGCSpectralTransform(mode='long', top_k_pct=1.0)
         ])
         super().__init__(root=root, name='Peptides-struct', pre_transform=pre_transform)
 
