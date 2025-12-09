@@ -8,7 +8,7 @@ from torch_geometric.utils import get_laplacian, to_scipy_sparse_matrix
 
 
 class WaveGCSpectralTransform:
-    def __init__(self, mode='long', top_k=None, top_k_pct=1.0):
+    def __init__(self, mode='long', top_k=None, top_k_pct=1.0, max_freqs=None):
         """
         Args:
             mode (str): 'short' or 'long'.
@@ -19,6 +19,7 @@ class WaveGCSpectralTransform:
         self.mode = mode
         self.top_k = top_k
         self.top_k_pct = top_k_pct
+        self.max_freqs = max_freqs
 
     def __call__(self, data: Data) -> Data:
         N = data.num_nodes
@@ -73,18 +74,24 @@ class WaveGCSpectralTransform:
                 eig_vals, U = eigh(L_dense)
                 eig_vals = eig_vals[:k]
                 U = U[:, :k]
+        
+        real_k = len(eig_vals)
+        if self.max_freqs is not None:
+            if real_k < self.max_freqs:
+                pad_width = self.max_freqs - real_k
+                # Pad Eigenvalues [k] -> [max_freqs]
+                eig_vals = np.pad(eig_vals, (0, pad_width), 'constant', constant_values=0)
+                # Pad Eigenvectors [N, k] -> [N, max_freqs]
+                U = np.pad(U, ((0, 0), (0, pad_width)), 'constant', constant_values=0)
+            elif real_k > self.max_freqs:
+                # Truncate if graph is unexpectedly large
+                eig_vals = eig_vals[:self.max_freqs]
+                U = U[:, :self.max_freqs]
+                real_k = self.max_freqs
 
-        # 4. Convert to Tensor
-        # eig_vals: [k]
-        # U: [N, k]
-        eig_vals = torch.from_numpy(eig_vals).float()
-        U = torch.from_numpy(U).float()
-
-        # Clamp for numerical stability (Theoretically in [0, 2])
-        eig_vals = torch.clamp(eig_vals, 0.0, 2.0)
-
-        # Store results
-        data.eigvs = eig_vals.view(1, -1)
-        data.U = U
-
+        data.eigvs = torch.from_numpy(eig_vals).float().clamp(0.0, 2.0)
+        data.U = torch.from_numpy(U).float()
+        # Save actual count so Collate can mask the padding
+        data.num_freqs = torch.tensor([real_k]) 
+        
         return data
