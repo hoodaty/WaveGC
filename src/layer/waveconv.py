@@ -84,11 +84,12 @@ from src.layer.utils import FFN
 
 class WaveConv(nn.Module):
 
-    def __init__(self, hidden_dim, K, J, tight_frames):
+    def __init__(self, hidden_dim, K, J, tight_frames, threshold=0.1):
         super().__init__()
         self.J = J
         self.K = K
         self.rho = K // 2
+        self.threshold = threshold
         self.SM_kernels = nn.ModuleList(
             [FFN(hidden_dim, hidden_dim) for j in range(self.J + 1)]
         )
@@ -129,10 +130,12 @@ class WaveConv(nn.Module):
 
         for j in range(self.J + 1):
             if j == 0:
-                h_g.append(self.generate_h(b_tilde, eigvs))
+                phi = self.generate_h(b_tilde, eigvs)
+                h_g.append(torch.where(torch.abs(phi)>=self.threshold, phi, 0))
             else:
+                psi = self.generate_g(a_tilde, scale_tilde[:, j - 1].view(-1, 1) * eigvs)
                 h_g.append(
-                    self.generate_g(a_tilde, scale_tilde[:, j - 1].view(-1, 1) * eigvs)
+                    torch.where(torch.abs(psi)>=self.threshold, psi, 0)
                 )
 
             v_sq += h_g[j] ** 2

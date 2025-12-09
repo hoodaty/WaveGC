@@ -8,19 +8,17 @@ from torch_geometric.utils import get_laplacian, to_scipy_sparse_matrix
 
 
 class WaveGCSpectralTransform:
-    def __init__(self, mode='long', top_k=None, top_k_pct=1.0, threshold=0.0):
+    def __init__(self, mode='long', top_k=None, top_k_pct=1.0):
         """
         Args:
             mode (str): 'short' or 'long'.
             top_k (int, optional): Exact number of eigenvalues to keep.
                                    Prioritized over top_k_pct if set.
             top_k_pct (float): Percentage of eigenvalues to keep (default 1.0).
-            threshold (float): Threshold for sparsifying U (default 0.0).
         """
         self.mode = mode
         self.top_k = top_k
         self.top_k_pct = top_k_pct
-        self.threshold = threshold
 
     def __call__(self, data: Data) -> Data:
         N = data.num_nodes
@@ -84,11 +82,6 @@ class WaveGCSpectralTransform:
 
         # Clamp for numerical stability (Theoretically in [0, 2])
         eig_vals = torch.clamp(eig_vals, 0.0, 2.0)
-
-        # [cite_start]5. Sparsification (Short-Range Nuance) [cite: 763]
-        if self.threshold > 0:
-            mask = torch.abs(U) >= self.threshold
-            U = U * mask
 
         # Store results
         data.eigvs = eig_vals.view(1, -1)
