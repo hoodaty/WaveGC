@@ -155,41 +155,31 @@ class PeptidesStructDataset(Dataset):  # Inherit from Dataset, not InMemoryDatas
         print("\nNote: This dataset uses torch.load with weights_only=False for PyG compatibility.")
     
     def _pad_graph(self, data, max_nodes, max_k):
-        """Pad a single graph to max dimensions"""
+        """Pad only spectral features to max_k dimensions"""
         import torch
         from torch_geometric.data import Data
         
-        num_nodes = data.num_nodes
         num_k = data.eigvs.shape[1]
-        feat_dim = data.x.shape[1]
         
-        # Create padded tensors
-        x_padded = torch.zeros((max_nodes, feat_dim))
-        x_padded[:num_nodes] = data.x
-        
+        # Only pad spectral features, NOT node features
         eigvs_padded = torch.zeros((1, max_k))
         eigvs_padded[0, :num_k] = data.eigvs
         
-        U_padded = torch.zeros((max_nodes, max_k))
-        U_padded[:num_nodes, :num_k] = data.U
+        U_padded = torch.zeros((data.num_nodes, max_k))
+        U_padded[:, :num_k] = data.U
         
-        # Create masks (True = padding, False = real data)
-        node_mask = torch.ones(max_nodes, dtype=torch.bool)
-        node_mask[:num_nodes] = False
-        
+        # Create mask for spectral dimension (True = padding, False = real data)
         eigvs_mask = torch.ones(max_k, dtype=torch.bool)
         eigvs_mask[:num_k] = False
         
-        # Create new Data object with padded features
+        # Create new Data object - keep x and edge_index as-is (sparse)
         padded_data = Data(
-            x=x_padded,
+            x=data.x,  # Keep original, unpadded
             edge_index=data.edge_index,  # Keep sparse
             y=data.y,
             eigvs=eigvs_padded,
             U=U_padded,
-            node_mask=node_mask,
             eigvs_mask=eigvs_mask,
-            num_real_nodes=num_nodes,
             num_real_k=num_k
         )
         
