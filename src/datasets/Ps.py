@@ -91,10 +91,12 @@ class PeptidesStructDataset(Dataset):  # Inherit from Dataset, not InMemoryDatas
         # Use LRGBDataset to load raw data for each split
         from torch_geometric.datasets import LRGBDataset
         
+        # First pass: determine global max dimensions across ALL splits
+        print("Computing global max dimensions...")
+        max_nodes_global = 0
+        max_k_global = 0
+        
         for split in ['train', 'val', 'test']:
-            print(f"Processing {split} split...")
-            
-            # Load using parent class without pre_transform
             temp_dataset = LRGBDataset(
                 root=self.root, 
                 name=self.name, 
@@ -102,31 +104,96 @@ class PeptidesStructDataset(Dataset):  # Inherit from Dataset, not InMemoryDatas
                 pre_transform=None
             )
             
-            # Extract individual graphs properly
+            for i in range(len(temp_dataset)):
+                data = temp_dataset.get(i)
+                max_nodes_global = max(max_nodes_global, data.num_nodes)
+        
+        # For spectral: assume top_k_pct=1.0, so max_k = max_nodes
+        max_k_global = max_nodes_global
+        print(f"Global max_nodes: {max_nodes_global}, max_k: {max_k_global}")
+        
+        # Second pass: process and pad each split
+        for split in ['train', 'val', 'test']:
+            print(f"\nProcessing {split} split...")
+            
+            temp_dataset = LRGBDataset(
+                root=self.root, 
+                name=self.name, 
+                split=split,
+                pre_transform=None
+            )
+            
             data_list = []
             for i in range(len(temp_dataset)):
-                data = temp_dataset.get(i)  # Use get() instead of indexing
+                data = temp_dataset.get(i)
                 data_list.append(data)
             
             print(f"Extracted {len(data_list)} individual graphs")
             
-            # Apply our transforms to each graph
+            # Apply transforms and pad
             if self.pre_transform is not None:
-                print(f"Applying spectral transform...")
+                print(f"Applying spectral transform and padding...")
                 transformed_list = []
                 for idx, data in enumerate(data_list):
                     if idx % 1000 == 0:
                         print(f"  Processing graph {idx}/{len(data_list)}")
+                    
+                    # Apply spectral transform
                     transformed_data = self.pre_transform(data)
+                    
+                    # Pad the graph to global max dimensions
+                    transformed_data = self._pad_graph(transformed_data, max_nodes_global, max_k_global)
+                    
                     transformed_list.append(transformed_data)
                 data_list = transformed_list
             
-            # Save as list (each element is a separate Data object)
-            print(f"Saving {len(data_list)} graphs to {split}.pt")
+            # Save as list
+            print(f"Saving {len(data_list)} padded graphs to {split}.pt")
             torch.save(data_list, osp.join(self.processed_dir, f'{split}.pt'))
             print(f"Finished processing {split} split")
         
         print("\nNote: This dataset uses torch.load with weights_only=False for PyG compatibility.")
+    
+    def _pad_graph(self, data, max_nodes, max_k):
+        """Pad a single graph to max dimensions"""
+        import torch
+        from torch_geometric.data import Data
+        
+        num_nodes = data.num_nodes
+        num_k = data.eigvs.shape[1]
+        feat_dim = data.x.shape[1]
+        
+        # Create padded tensors
+        x_padded = torch.zeros((max_nodes, feat_dim))
+        x_padded[:num_nodes] = data.x
+        
+        eigvs_padded = torch.zeros((1, max_k))
+        eigvs_padded[0, :num_k] = data.eigvs
+        
+        U_padded = torch.zeros((max_nodes, max_k))
+        U_padded[:num_nodes, :num_k] = data.U
+        
+        # Create masks (True = padding, False = real data)
+        node_mask = torch.ones(max_nodes, dtype=torch.bool)
+        node_mask[:num_nodes] = False
+        
+        eigvs_mask = torch.ones(max_k, dtype=torch.bool)
+        eigvs_mask[:num_k] = False
+        
+        # Create new Data object with padded features
+        padded_data = Data(
+            x=x_padded,
+            edge_index=data.edge_index,  # Keep sparse
+            y=data.y,
+            eigvs=eigvs_padded,
+            U=U_padded,
+            node_mask=node_mask,
+            eigvs_mask=eigvs_mask,
+            num_real_nodes=num_nodes,
+            num_real_k=num_k
+        )
+        
+        return padded_data
 
     def len(self):
         return len(self._data_list)
