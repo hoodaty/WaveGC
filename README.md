@@ -1,145 +1,179 @@
-# PyTorch Template for DL projects
+# WaveGC: Wavelet Graph Convolutional Networks
 
 <p align="center">
-  <a href="#about">About</a> •
-  <a href="#tutorials">Tutorials</a> •
-  <a href="#examples">Examples</a> •
-  <a href="#installation">Installation</a> •
-  <a href="#how-to-use">How To Use</a> •
-  <a href="#useful-links">Useful Links</a> •
-  <a href="#credits">Credits</a> •
-  <a href="#license">License</a>
+<a href="#about">About</a> •
+<a href="#key-features">Key Features</a> •
+<a href="#installation">Installation</a> •
+<a href="#usage">Usage</a> •
+<a href="#configuration">Configuration</a> •
+<a href="#project-structure">Structure</a> •
+<a href="#credits">Credits</a> •
+<a href="#license">License</a>
 </p>
 
 <p align="center">
-<a href="https://github.com/Blinorot/pytorch_project_template/generate">
-  <img src="https://img.shields.io/badge/use%20this-template-green?logo=github">
-</a>
-<a href="https://github.com/Blinorot/pytorch_project_template/blob/main/LICENSE">
-   <img src=https://img.shields.io/badge/license-MIT-blue.svg>
-</a>
-<a href="https://github.com/Blinorot/pytorch_project_template/blob/main/CITATION.cff">
-   <img src="https://img.shields.io/badge/cite-this%20repo-purple">
-</a>
+<img src="[https://img.shields.io/badge/python-3.9+-blue.svg](https://www.google.com/search?q=https://img.shields.io/badge/python-3.9%2B-blue.svg)" alt="Python Version">
+<img src="[https://img.shields.io/badge/pytorch-2.0+-orange.svg](https://www.google.com/search?q=https://img.shields.io/badge/pytorch-2.0%2B-orange.svg)" alt="PyTorch Version">
+<img src="[https://img.shields.io/badge/license-MIT-green.svg](https://www.google.com/search?q=https://img.shields.io/badge/license-MIT-green.svg)" alt="License">
 </p>
 
 ## About
 
-This repository contains a template for [PyTorch](https://pytorch.org/)-based Deep Learning projects.
+**WaveGC** is a PyTorch-based Deep Learning library implementing **Wavelet Graph Convolutional Networks (WaveGCNet)**.
 
-The template utilizes different python-dev techniques to improve code readability. Configuration methods enhance reproducibility and experiments control.
+This project is an implementation of the paper **"A General Graph Spectral Wavelet Convolution via Chebyshev Order Decomposition"**. It provides a flexible and modular framework for training and evaluating graph neural networks that utilize spectral wavelet transforms and tight frames for efficient graph representation learning.
 
-The repository is released as a part of the [HSE DLA course](https://github.com/markovka17/dla), however, can easily be adopted for any DL-task.
+The architecture is designed to handle complex graph data by leveraging spectral properties (eigenvectors and eigenvalues) and wavelet scattering transforms, enabling robust node classification and link prediction tasks.
 
-This template is the official recommended template for the [EPFL CS-433 ML Course](https://www.epfl.ch/labs/mlo/machine-learning-cs-433/).
+**Authors:** Sergei Gerasimov and Soumodeep Hoodaty.
 
-> 📖 **If you use this template in your work, please cite this repository or include a reference. Attribution supports the project and encourages continued development.**
+## Key Features
 
-## Tutorials
-
-This template utilizes experiment tracking techniques, such as [WandB](https://docs.wandb.ai/) and [Comet ML](https://www.comet.com/docs/v2/), and [Hydra](https://hydra.cc/docs/intro/) for the configuration. It also automatically reformats code and conducts several checks via [pre-commit](https://pre-commit.com/). If you are not familiar with these tools, we advise you to look at the tutorials below:
-
-- [Python Dev Tips](https://github.com/ebezzam/python-dev-tips): information about [Git](https://git-scm.com/doc), [pre-commit](https://pre-commit.com/), [Hydra](https://hydra.cc/docs/intro/), and other stuff for better Python code development. The YouTube recording of the workshop is available [here](https://youtu.be/okxaTuBdDuY).
-
-- [Seminar on R&D Coding 2025](https://youtu.be/PE1zaW5it_A): Seminar from the [LauzHack Deep Learning Bootcamp](https://github.com/LauzHack/deep-learning-bootcamp/) with discussion on logging, project-based coding, configuration, and reproducibility. The materials can be found [here](https://github.com/LauzHack/deep-learning-bootcamp/tree/summer25/day05).
-
-- [Seminar on R&D Coding 2024](https://youtu.be/sEA-Js5ZHxU): Seminar from the [LauzHack Deep Learning Bootcamp](https://github.com/LauzHack/deep-learning-bootcamp/) with template discussion and reasoning. It also explains how to work with [WandB](https://docs.wandb.ai/). The seminar materials can be found [here](https://github.com/LauzHack/deep-learning-bootcamp/blob/main/day03/Seminar_WandB_and_Coding.ipynb).
-
-- [HSE DLA Course Introduction Week](https://github.com/markovka17/dla/tree/2024/week01): combines the two seminars above into one with some updates, including an extra example for [Comet ML](https://www.comet.com/docs/v2/).
-
-- [PyTorch Basics](https://github.com/markovka17/dla/tree/2024/week01/intro_to_pytorch): several notebooks with [PyTorch](https://pytorch.org/docs/stable/index.html) basics and corresponding seminar recordings from the [LauzHack Deep Learning Bootcamp](https://github.com/LauzHack/deep-learning-bootcamp/).
-
-To start working with a template, just click on the `use this template` button.
-
-<a href="https://github.com/Blinorot/pytorch_project_template/generate">
-  <img src="https://img.shields.io/badge/use%20this-template-green?logo=github">
-</a>
-
-You can choose any of the branches as a starting point. [Set your choice as the default branch](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-branches-in-your-repository/changing-the-default-branch) in the repository settings. You can also [delete unnecessary branches](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-and-deleting-branches-within-your-repository).
-
-## Examples
-
-> [!IMPORTANT]
-> The main branch leaves some of the code parts empty or fills them with dummy examples, showing just the base structure. The final users can add code required for their own tasks.
-
-You can find examples of this template completed for different tasks in other branches:
-
-- [Image classification](https://github.com/Blinorot/pytorch_project_template/tree/example/image-classification): simple classification problem on [MNIST](https://yann.lecun.com/exdb/mnist/) and [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html) datasets.
-
-- [ASR](https://github.com/Blinorot/pytorch_project_template/tree/example/asr): template for the automatic speech recognition (ASR) task. Some of the parts (for example, `collate_fn` and beam search for `text_encoder`) are missing for studying purposes of [HSE DLA course](https://github.com/markovka17/dla).
+* **WaveGCNet Architecture:** Implementation of the Wavelet Graph Convolution network with customizable heads, scales, and polynomial approximations ().
+* **Spectral Processing:** Built-in support for handling Laplacian eigenvectors (`eigvs`) and spectral matrices (`U`) for advanced positional encodings.
+* **Modular Design:** powered by [Hydra](https://hydra.cc/) for hierarchical configuration management.
+* **Experiment Tracking:** Integrated with **WandB** for logging metrics and visualizing training progress.
+* **Reproducibility:** seeded random number generators and strict configuration versioning.
+* **Developer Friendly:** Includes `pre-commit` hooks, type hinting, and a clean project structure based on modern PyTorch templates.
 
 ## Installation
 
-Installation may depend on your task. The general steps are the following:
+### Prerequisites
 
-0. (Optional) Create and activate new environment using [`conda`](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) or `venv` ([`+pyenv`](https://github.com/pyenv/pyenv)).
+* Python  3.9
+* CUDA (optional, for GPU acceleration)
 
-   a. `conda` version:
+### Steps
 
-   ```bash
-   # create env
-   conda create -n project_env python=PYTHON_VERSION
-
-   # activate env
-   conda activate project_env
-   ```
-
-   b. `venv` (`+pyenv`) version:
-
-   ```bash
-   # create env
-   ~/.pyenv/versions/PYTHON_VERSION/bin/python3 -m venv project_env
-
-   # alternatively, using default python version
-   python3 -m venv project_env
-
-   # activate env
-   source project_env/bin/activate
-   ```
-
-1. Install all required packages
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. Install `pre-commit`:
-   ```bash
-   pre-commit install
-   ```
-
-## How To Use
-
-To train a model, run the following command:
-
+1. **Clone the repository:**
 ```bash
-python3 train.py -cn=CONFIG_NAME HYDRA_CONFIG_ARGUMENTS
+git clone https://github.com/gerasimovsergey2001/wavegc.git
+cd wavegc
+
 ```
 
-Where `CONFIG_NAME` is a config from `src/configs` and `HYDRA_CONFIG_ARGUMENTS` are optional arguments.
 
-To run inference (evaluate the model or save predictions):
-
+2. **Create a virtual environment (Recommended):**
 ```bash
-python3 inference.py HYDRA_CONFIG_ARGUMENTS
+# Using venv
+python3 -m venv venv
+source venv/bin/activate
+
+# OR using Conda
+conda create -n wavegc python=3.9
+conda activate wavegc
+
 ```
 
-## Useful Links:
 
-You may find the following links useful:
+3. **Install dependencies:**
+This project uses a `pyproject.toml` for dependency management.
+```bash
+pip install .
+# OR manually
+pip install -r requirements.txt
 
-- [Report branch](https://github.com/Blinorot/pytorch_project_template/tree/report): Guidelines for writing a scientific report/paper (with an emphasis on DL projects).
+```
 
-- [CLAIRE Template](https://github.com/CLAIRE-Labo/python-ml-research-template): additional template by [EPFL CLAIRE Laboratory](https://www.epfl.ch/labs/claire/) that can be combined with ours to enhance experiments reproducibility via [Docker](https://www.docker.com/).
 
-- [Mamba](https://github.com/mamba-org/mamba) and [Poetry](https://python-poetry.org/): alternatives to [Conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) and [pip](https://pip.pypa.io/en/stable/installation/) package managers given above.
+4. **Install Pre-commit hooks (for developers):**
+```bash
+pre-commit install
 
-- [Awesome README](https://github.com/matiassingers/awesome-readme): a list of awesome README files for inspiration. Check the basics [here](https://github.com/PurpleBooth/a-good-readme-template).
+```
+
+
+
+## Usage
+
+The project uses `train.py` for training models and `inference.py` for evaluation.
+
+### Training
+
+To train the WaveGC model, use the `train.py` script. You can specify the configuration file using the `-cn` (config name) flag.
+
+```bash
+# Train using the default configuration
+python3 train.py
+
+# Train using a specific experiment config (e.g., WaveGC on Amazon Photo)
+python3 train.py -cn=wavegc_amazon
+
+```
+
+You can override any parameter from the command line using Hydra syntax:
+
+```bash
+# Override model parameters (e.g., embedding dimension and dropout)
+python3 train.py model.emb_dim=64 model.dropout=0.5
+
+# Change the dataset
+python3 train.py dataset=amazon
+
+```
+
+### Inference
+
+To evaluate a trained model or generate predictions:
+
+```bash
+python3 inference.py model_path="path/to/checkpoint.pth"
+
+```
+
+## Configuration
+
+Configurations are managed via [Hydra](https://hydra.cc/) and stored in the `src/configs` directory. The structure is as follows:
+
+* **`src/configs/train_config.yaml`**: Main entry point for training configuration.
+* **`src/configs/model/`**: Model architectures (e.g., `wavegc.yaml`, `baseline.yaml`).
+* **`src/configs/datasets/`**: Dataset definitions (e.g., `amazon.yaml`).
+* **`src/configs/trainer/`**: Trainer settings (optimizer, scheduler, epochs).
+* **`src/configs/logger/`**: WandB/CometML settings.
+
+### Example: WaveGC Model Config (`src/configs/model/wavegc.yaml`)
+
+```yaml
+_target_: src.model.wavegc.WaveGCNet
+emb_dim: 32
+heads_num: 4
+num_layers: 4
+mpnn: "gcn"
+K: 6       # Polynomial order
+J: 3       # Wavelet scale
+tight_frames: True
+
+```
+
+## Project Structure
+
+```
+wavegc/
+├── data/                   # Dataset storage
+├── src/
+│   ├── configs/            # Hydra configuration files
+│   ├── datasets/           # PyG dataset implementations (Amazon, etc.)
+│   ├── layer/              # Custom layers (WaveGC, Encoders)
+│   ├── model/              # Full model architectures (WaveGCNet)
+│   ├── trainer/            # Training and inference loops
+│   ├── utils/              # Utility scripts (logging, seeding)
+│   └── ...
+├── train.py                # Main training script
+├── inference.py            # Main inference script
+├── pyproject.toml          # Project metadata and dependencies
+└── README.md
+
+```
 
 ## Credits
 
-This repository is based on a heavily modified fork of [pytorch-template](https://github.com/victoresque/pytorch-template) and [asr_project_template](https://github.com/WrathOfGrapes/asr_project_template) repositories.
+This repository was developed by **Sergei Gerasimov** and **Soumodeep Hoodaty**.
+
+* **Original Paper:** *A General Graph Spectral Wavelet Convolution via Chebyshev Order Decomposition*.
+* **Original Repository:** The official implementation by the paper authors can be found at [https://github.com/liun-online/WaveGC](https://github.com/liun-online/WaveGC).
+
+This project utilizes the [PyTorch Project Template](https://github.com/Blinorot/pytorch_project_template) for structure and best practices.
 
 ## License
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](/LICENSE)
+This project is licensed under the MIT License. See the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
